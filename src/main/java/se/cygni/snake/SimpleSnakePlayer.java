@@ -6,21 +6,22 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.WebSocketSession;
 import se.cygni.snake.api.event.*;
 import se.cygni.snake.api.exception.InvalidPlayerName;
-import se.cygni.snake.api.model.GameMode;
-import se.cygni.snake.api.model.GameSettings;
-import se.cygni.snake.api.model.PlayerPoints;
-import se.cygni.snake.api.model.SnakeDirection;
+import se.cygni.snake.api.model.*;
 import se.cygni.snake.api.response.PlayerRegistered;
 import se.cygni.snake.api.util.GameSettingsUtils;
 import se.cygni.snake.client.AnsiPrinter;
 import se.cygni.snake.client.BaseSnakeClient;
+import se.cygni.snake.client.MapCoordinate;
 import se.cygni.snake.client.MapUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 public class SimpleSnakePlayer extends BaseSnakeClient {
+
+    private MapUtil mapUtil;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleSnakePlayer.class);
 
@@ -29,10 +30,10 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
 
     // Personalise your game ...
     private static final String SERVER_NAME = "snake.cygni.se";
-    private static  final int SERVER_PORT = 80;
+    private static final int SERVER_PORT = 80;
 
     private static final GameMode GAME_MODE = GameMode.TRAINING;
-    private static final String SNAKE_NAME = "The Simple Snake";
+    private static final String SNAKE_NAME = "Kaa";
 
     // Set to false if you don't want the game world printed every game tick.
     private static final boolean ANSI_PRINTER_ACTIVE = false;
@@ -79,16 +80,22 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
         ansiPrinter.printMap(mapUpdateEvent);
 
         // MapUtil contains lot's of useful methods for querying the map!
-        MapUtil mapUtil = new MapUtil(mapUpdateEvent.getMap(), getPlayerId());
+        mapUtil = new MapUtil(mapUpdateEvent.getMap(), getPlayerId());
 
-        List<SnakeDirection> directions = new ArrayList<>();
+        List<SnakeDirection> possibleDirections = possibleDirections();
 
-        // Let's see in which directions I can move
-        for (SnakeDirection direction : SnakeDirection.values()) {
-            if (mapUtil.canIMoveInDirection(direction)) {
-                directions.add(direction);
+        SnakeInfo[] snakeInfo = mapUpdateEvent.getMap().getSnakeInfos();
+        List<String> liveSnakeIDs = new ArrayList<>();
+
+        for (SnakeInfo snake : snakeInfo) {
+            if (snake.isAlive()) {
+                liveSnakeIDs.add(snake.getId());
             }
         }
+
+
+        SnakeDirection chosenDirection = antiGravityDirection(liveSnakeIDs, possibleDirections);
+        /*
         Random r = new Random();
         SnakeDirection chosenDirection = SnakeDirection.DOWN;
 
@@ -96,8 +103,106 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
         if (!directions.isEmpty())
             chosenDirection = directions.get(r.nextInt(directions.size()));
 
+        */
+
         // Register action here!
         registerMove(mapUpdateEvent.getGameTick(), chosenDirection);
+    }
+
+    private SnakeDirection antiGravityDirection(List<String> snakeIDs, List<SnakeDirection> possibleDirections) {
+        double weightX = 0;
+        double weightY = 0;
+
+        MapCoordinate myPos = mapUtil.getMyPosition();
+        for (String id : snakeIDs) {
+            MapCoordinate snakeHead = mapUtil.getSnakeSpread(id)[0];
+
+            try {
+                weightX += 1 / (myPos.x - snakeHead.x);
+            } catch (ArithmeticException ign) {
+            }
+            try {
+                weightY += 1 / (myPos.y - snakeHead.y);
+            } catch (ArithmeticException ign) {
+            }
+            //snakeHead.getManhattanDistanceTo(myPos);
+        }
+
+        //To make it easier to understand nested hell bellow
+        boolean xLargestAbs = Math.abs(weightX) > Math.abs(weightY);
+        boolean xWeightUp = weightX > 0;
+        boolean yWeightLeft = weightY > 0;
+
+        boolean leftPossible = possibleDirections.contains(SnakeDirection.LEFT);
+        boolean rightPossible = possibleDirections.contains(SnakeDirection.RIGHT);
+        boolean upPossible = possibleDirections.contains(SnakeDirection.UP);
+        boolean downPossible = possibleDirections.contains(SnakeDirection.DOWN);
+
+        SnakeDirection antiGravityDirection;
+
+
+        //Biggest abs first, then smallest, then inverse of smallerst, last inverse of biggest
+        if (xLargestAbs) {
+            if (xWeightUp && yWeightLeft) {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.UP, SnakeDirection.LEFT, SnakeDirection.RIGHT, SnakeDirection.DOWN);
+            } else if (xWeightUp && !yWeightLeft) {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.UP, SnakeDirection.RIGHT, SnakeDirection.LEFT, SnakeDirection.DOWN);
+            } else if (!xWeightUp && !yWeightLeft) {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.DOWN, SnakeDirection.RIGHT, SnakeDirection.LEFT, SnakeDirection.UP);
+            } else {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.DOWN, SnakeDirection.LEFT, SnakeDirection.RIGHT, SnakeDirection.UP);
+            }
+        } else {
+            if (xWeightUp && yWeightLeft) {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.LEFT, SnakeDirection.UP, SnakeDirection.DOWN, SnakeDirection.RIGHT);
+            } else if (xWeightUp && !yWeightLeft) {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.RIGHT, SnakeDirection.UP, SnakeDirection.DOWN, SnakeDirection.LEFT);
+            } else if (!xWeightUp && !yWeightLeft) {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.RIGHT, SnakeDirection.DOWN, SnakeDirection.UP, SnakeDirection.LEFT);
+            } else {
+                return getDirectionFromPrio(possibleDirections, SnakeDirection.LEFT, SnakeDirection.DOWN, SnakeDirection.UP, SnakeDirection.RIGHT);
+            }
+        }
+    }
+
+    private SnakeDirection getDirectionFromPrio(List<SnakeDirection> possibleDirections, SnakeDirection first, SnakeDirection second, SnakeDirection third, SnakeDirection forth) {
+        if (possibleDirections.contains(first)) {
+            return first;
+        } else if (possibleDirections.contains(second)) {
+            return second;
+        } else if (possibleDirections.contains(third)) {
+            return third;
+        } else {
+            return forth;
+        }
+    }
+
+    private SnakeDirection leftOrRight(List<SnakeDirection> possibleDirections, double weightX) {
+        if (possibleDirections.contains(SnakeDirection.LEFT) && weightX < 0) {
+            return SnakeDirection.LEFT;
+        } else if (possibleDirections.contains(SnakeDirection.RIGHT) && weightX > 0) {
+            return SnakeDirection.RIGHT;
+        }
+        return null;
+    }
+
+    private SnakeDirection upOrDown(List<SnakeDirection> possibleDirections, double weightX) {
+        if (possibleDirections.contains(SnakeDirection.DOWN) && weightX < 0) {
+            return SnakeDirection.DOWN;
+        } else if (possibleDirections.contains(SnakeDirection.UP) && weightX > 0) {
+            return SnakeDirection.UP;
+        }
+        return null;
+    }
+
+    private List<SnakeDirection> possibleDirections() {
+        List<SnakeDirection> directions = new ArrayList<>();
+        for (SnakeDirection direction : SnakeDirection.values()) {
+            if (mapUtil.canIMoveInDirection(direction)) {
+                directions.add(direction);
+            }
+        }
+        return directions;
     }
 
 
