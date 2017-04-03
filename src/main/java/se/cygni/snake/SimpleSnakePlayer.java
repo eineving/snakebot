@@ -23,7 +23,7 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
     ArrayList<MapCoordinate> filled = new ArrayList<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleSnakePlayer.class);
-
+    int move = 0;
     // Set to false if you want to start the game from a GUI
     private static final boolean AUTO_START_GAME = false;
 
@@ -31,7 +31,7 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
     private static final String SERVER_NAME = "snake.cygni.se";
     private static final int SERVER_PORT = 80;
 
-    private static final GameMode GAME_MODE = GameMode.TOURNAMENT;
+    private static final GameMode GAME_MODE = GameMode.TRAINING;
     private static final String SNAKE_NAME = "Eine sneaky snake";
 
     // Set to false if you don't want the game world printed every game tick.
@@ -39,17 +39,17 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
     private AnsiPrinter ansiPrinter = new AnsiPrinter(ANSI_PRINTER_ACTIVE, true);
 
     public static void main(String[] args) {
-        SimpleSnakePlayer simpleSnakePlayer = new SimpleSnakePlayer();
+        SimpleSnakePlayer brainySnake = new BrainySnake();
 
         try {
-            ListenableFuture<WebSocketSession> connect = simpleSnakePlayer.connect();
+            ListenableFuture<WebSocketSession> connect = brainySnake.connect();
             connect.get();
         } catch (Exception e) {
             LOGGER.error("Failed to connect to server", e);
             System.exit(1);
         }
 
-        startTheSnake(simpleSnakePlayer);
+        startTheSnake(brainySnake);
     }
 
     /**
@@ -76,6 +76,7 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
 
     @Override
     public void onMapUpdate(MapUpdateEvent mapUpdateEvent) {
+        System.out.println("=================MOVE NUMBER " + move++ + "==============");
         ansiPrinter.printMap(mapUpdateEvent);
         filled = null;
 
@@ -85,6 +86,7 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
         List<SnakeDirection> possibleDirections = possibleDirections();
 
         SnakeInfo[] snakeInfo = mapUpdateEvent.getMap().getSnakeInfos();
+
         List<String> liveSnakeIDs = new ArrayList<>();
 
         for (SnakeInfo snake : snakeInfo) {
@@ -94,45 +96,35 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
         }
 
         SnakeDirection chosenDirection = antiGravityDirection(liveSnakeIDs, possibleDirections);
-        System.out.println(chosenDirection.toString());
+        System.out.println("Sending direction: " + chosenDirection.toString() + "\n");
+
 
         // Register action here!
         registerMove(mapUpdateEvent.getGameTick(), chosenDirection);
     }
+    /*
+    private int crucialPassage(SnakeDirection direction, int max){
+        MapCoordinate nextCoordinate = coordinateInDirection(direction);
+        if(direction == SnakeDirection.UP || direction==SnakeDirection.DOWN){
 
-    private List<SnakeDirection> directionsWithPossibleEscapeRoutes(List<SnakeDirection> possibleDirections) {
-        List<SnakeDirection> directions = new ArrayList<>();
-        //mapUtil.getSnakeSpread()
+        } else {
 
-
-        return directions;
-    }
-
-    private int possibleStepsFromDirectionWrapper(List<String> snakeIDs, SnakeDirection direction) {
-        if (filled == null) {
-            filled = new ArrayList<>();
-            for (String id : snakeIDs) {
-                for (MapCoordinate coordinate : mapUtil.getSnakeSpread(id)) {
-                    filled.add(coordinate);
-                }
-            }
         }
+    }
+*/
+    private MapCoordinate coordinateInDirection(SnakeDirection direction) {
         switch (direction) {
             case UP:
-                return psfd(filled, mapUtil.getMyPosition().translateBy(0, -1));
+                return mapUtil.getMyPosition().translateBy(0, -1);
             case DOWN:
-                return psfd(filled, mapUtil.getMyPosition().translateBy(0, 1));
+                return mapUtil.getMyPosition().translateBy(0, 1);
             case RIGHT:
-                return psfd(filled, mapUtil.getMyPosition().translateBy(1, 0));
+                return mapUtil.getMyPosition().translateBy(1, 0);
             case LEFT:
-                return psfd(filled, mapUtil.getMyPosition().translateBy(-1, 0));
+                return mapUtil.getMyPosition().translateBy(-1, 0);
 
         }
-        return 0;
-    }
-
-    private int psfd(ArrayList<MapCoordinate> filled, MapCoordinate coordinate) {
-        return 0;
+        return null;
     }
 
     private SnakeDirection antiGravityDirection(List<String> snakeIDs, List<SnakeDirection> possibleDirections) {
@@ -149,15 +141,24 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
 
             //TODO change ugly stuff
 
-            if (myPos.x != snakeHead.x) {
-                weightX += (1.0 / (myPos.x - snakeHead.x));
+            int deltaX = snakeHead.x - myPos.x;
+            int deltaY = snakeHead.y - myPos.y;
+            boolean leftOfMe = deltaX < 0;
+            boolean overMe = deltaY < 0;
+            double xFactor = leftOfMe ? -1.0 : 1.0;
+            double yFactor = overMe ? -1.0 : 1.0;
+            int manhattan = snakeHead.getManhattanDistanceTo(myPos);
+
+            if (manhattan != 0) {
+                weightX += xFactor / (manhattan);
+                weightY += yFactor / (manhattan);
             }
-            if (myPos.y != snakeHead.y) {
-                weightY += (1.0 / (myPos.y - snakeHead.y));
-            }
-            System.out.println("Manhattan distance: " + snakeHead.getManhattanDistanceTo(myPos));
-            System.out.println("yDiff: " + (myPos.y - snakeHead.y));
-            System.out.println("xDiff: " + (myPos.x - snakeHead.x));
+
+            System.out.println("Manhattan distance: " + manhattan);
+            System.out.println("yDiff: " + deltaY);
+            System.out.println("xDiff: " + deltaX);
+            System.out.println("WeightY: " + weightY);
+            System.out.println("WeightX: " + weightX);
 
             //snakeHead.getManhattanDistanceTo(myPos);
         }
@@ -169,7 +170,6 @@ public class SimpleSnakePlayer extends BaseSnakeClient {
 
         System.out.println("WeightY: " + weightY);
         System.out.println("WeightX: " + weightX);
-        System.out.println("");
 
         SnakeDirection antiGravityDirection;
 
