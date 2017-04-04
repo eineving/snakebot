@@ -10,6 +10,7 @@ import se.cygni.snake.client.MapUtil;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by danie on 2017-03-27.
@@ -22,7 +23,7 @@ public class BrainySnake extends SimpleSnakePlayer {
 
     public BrainySnake() {
         senses.add(new Obvious());
-        senses.add(new Caution());
+        senses.add(new Caution(0.1));
         senses.add(new Planning());
     }
 
@@ -41,21 +42,39 @@ public class BrainySnake extends SimpleSnakePlayer {
                 liveSnakeIDs.add(snake.getId());
             }
         }
-        List<SnakeDirection> combined = MyUtils.filledMoves(mapUtil);
-        List<SnakeDirection> lastSense;
-        List<SnakeDirection> previous = combined;
+        List<Map<SnakeDirection, Double>> sensePrios = new LinkedList<>();
+
         for (Sense sense : senses) {
-            previous = combined;
-            lastSense = sense.getMovesRanked(mapUtil, liveSnakeIDs);
-            combined = getIntersectionOfMoves(combined, lastSense);
-            System.out.println(lastSense);
-            System.out.println(combined);
+            sensePrios.add(sense.getMovesRanked(mapUtil, liveSnakeIDs));
         }
-        try {
-            registerMove(mapUpdateEvent.getGameTick(), combined.get(0));
-        } catch (Exception error){
-            registerMove(mapUpdateEvent.getGameTick(), previous.get(0));
+
+
+        Double up = 1.0, down = 1.0, left = 1.0, right = 1.0;
+        for (Map<SnakeDirection, Double> instance : sensePrios) {
+            up *= instance.get(SnakeDirection.UP);
+            down *= instance.get(SnakeDirection.DOWN);
+            left *= instance.get(SnakeDirection.LEFT);
+            right *= instance.get(SnakeDirection.RIGHT);
         }
+
+        System.out.println("PRIOS! Up:" + up + " Down:" + down + " Right: " + right + " Left:" + left);
+
+        SnakeDirection moveToMake = SnakeDirection.UP;
+        if (up == 0 && down == 0 && right == 0 && left == 0) {
+            System.out.println("FUUUUUUUUUUUUUUUUCK!");
+        } else if (up >= down && up >= right && up >= left) {
+            moveToMake = SnakeDirection.UP;
+        } else if (down >= up && down >= right && down >= left) {
+            moveToMake = SnakeDirection.DOWN;
+        } else if (right >= up && right >= down && right >= left) {
+            moveToMake = SnakeDirection.RIGHT;
+        } else if (left >= up && left >= right && left >= down) {
+            moveToMake = SnakeDirection.LEFT;
+        }
+
+        registerMove(mapUpdateEvent.getGameTick(), moveToMake);
+
+        System.out.println("MOVE: " + moveToMake);
         // Register action here!
     }
 

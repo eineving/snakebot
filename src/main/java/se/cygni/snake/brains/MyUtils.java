@@ -1,8 +1,10 @@
 package se.cygni.snake.brains;
 
 import se.cygni.snake.api.model.SnakeDirection;
+import se.cygni.snake.client.MapCoordinate;
 import se.cygni.snake.client.MapUtil;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,5 +19,14 @@ public class MyUtils {
         filled.add(SnakeDirection.RIGHT);
         filled.add(SnakeDirection.LEFT);
         return filled;
+    }
+
+    public static List<MapCoordinate> getTheFourNeighbours(MapCoordinate root) {
+        List<MapCoordinate> neighbours = new ArrayList<>();
+        neighbours.add(root.translateBy(-1, 0));
+        neighbours.add(root.translateBy(1, 0));
+        neighbours.add(root.translateBy(0, 1));
+        neighbours.add(root.translateBy(0, -1));
+        return neighbours;
     }
 }
