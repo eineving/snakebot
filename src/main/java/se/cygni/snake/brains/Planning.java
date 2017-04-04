@@ -11,10 +11,13 @@ import java.util.*;
  */
 public class Planning extends Sense {
     private Set<MapCoordinate> tempBounding = new HashSet<>();
-    private Double first = 1.0, second = 0.75, third = 0.5, fourth = 0.25;
 
-    private Double reduction = 0.25;
-    private Double increment = 0.25;
+
+    public Planning(Double increment) {
+        this.increment = increment;
+    }
+
+    private Double increment;
 
     @Override
     public Map<SnakeDirection, Double> getMovesRanked(MapUtil mapUtil, List<String> liveSnakes) {
@@ -104,38 +107,6 @@ public class Planning extends Sense {
             currentPrio += increment;
         }
         return prios;
-
-
-
-        /*
-        List<SnakeDirection> orderdDirs = new LinkedList<>();
-
-        for (int i = 0; i < 4; i++) {
-            if (up >= down && up >= right && up >= left && !orderdDirs.contains(SnakeDirection.UP)) {
-                orderdDirs.add(SnakeDirection.UP);
-                up = 0;
-            } else if (down >= up && down >= right && down >= left && !orderdDirs.contains(SnakeDirection.DOWN)) {
-                orderdDirs.add(SnakeDirection.DOWN);
-                down = 0;
-
-            } else if (right >= up && right >= down && right >= left && !orderdDirs.contains(SnakeDirection.RIGHT)) {
-                orderdDirs.add(SnakeDirection.RIGHT);
-                right = 0;
-
-            } else if (left >= up && left >= down && left >= right && !orderdDirs.contains(SnakeDirection.LEFT)) {
-                orderdDirs.add(SnakeDirection.LEFT);
-                left = 0;
-            }
-        }
-        System.out.println("Planning debug: " + orderdDirs.toString());
-
-        prios.put(orderdDirs.get(0), this.first);
-        prios.put(orderdDirs.get(1), second);
-        prios.put(orderdDirs.get(2), third);
-        prios.put(orderdDirs.get(3), fourth);
-
-        return prios;
-        */
     }
 
     private int wrapped(MapUtil mapUtil, MapCoordinate start) {

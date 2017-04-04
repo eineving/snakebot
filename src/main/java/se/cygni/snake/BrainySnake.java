@@ -19,16 +19,17 @@ public class BrainySnake extends SimpleSnakePlayer {
     private MapUtil mapUtil;
     private List<Sense> senses = new LinkedList<>();
 
-    private static final GameMode GAME_MODE = GameMode.TOURNAMENT;
 
     public BrainySnake() {
         senses.add(new Obvious());
         senses.add(new Caution(0.1));
-        senses.add(new Planning());
+        senses.add(new Planning(0.25));
+        senses.add(new CageFright(1.0, 0.99));
     }
 
     @Override
     public void onMapUpdate(MapUpdateEvent mapUpdateEvent) {
+        long start = System.nanoTime();
         System.out.println("=================MOVE NUMBER " + move++ + "==============");
         // MapUtil contains lot's of useful methods for querying the map!
         mapUtil = new MapUtil(mapUpdateEvent.getMap(), getPlayerId());
@@ -75,6 +76,7 @@ public class BrainySnake extends SimpleSnakePlayer {
         registerMove(mapUpdateEvent.getGameTick(), moveToMake);
 
         System.out.println("MOVE: " + moveToMake);
+        System.out.println("Took " + (System.nanoTime() - start) / 1000000 + "ms");
         // Register action here!
     }
 

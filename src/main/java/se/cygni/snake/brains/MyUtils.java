@@ -29,4 +29,31 @@ public class MyUtils {
         neighbours.add(root.translateBy(0, -1));
         return neighbours;
     }
+
+    public static List<MapCoordinate> getPossibleEnemySnakePossitions(MapUtil mapUtil, List<String> liveSnakes) {
+        List<MapCoordinate> enemyPossibleNext = new LinkedList<>();
+        MapCoordinate[] heads = getEnemyHeads(mapUtil, liveSnakes);
+
+
+        for (MapCoordinate enemyHead : heads) {
+            enemyPossibleNext.add(enemyHead.translateBy(-1, 0));
+            enemyPossibleNext.add(enemyHead.translateBy(1, 0));
+            enemyPossibleNext.add(enemyHead.translateBy(0, 1));
+            enemyPossibleNext.add(enemyHead.translateBy(0, -1));
+        }
+        return enemyPossibleNext;
+    }
+
+    public static MapCoordinate[] getEnemyHeads(MapUtil mapUtil, List<String> liveSnakes) {
+        MapCoordinate[] heads = new MapCoordinate[liveSnakes.size() - 1];
+        int i = 0;
+        for (String snake : liveSnakes) {
+            MapCoordinate temp = mapUtil.getSnakeSpread(snake)[0];
+            if (!temp.equals(mapUtil.getMyPosition())) {
+                heads[i] = temp;
+                i++;
+            }
+        }
+        return heads;
+    }
 }
