@@ -1,4 +1,4 @@
-package se.cygni.snake.brains;
+package se.cygni.snake.brain;
 
 import se.cygni.snake.api.model.SnakeDirection;
 import se.cygni.snake.client.MapCoordinate;
@@ -9,9 +9,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Created by danie on 2017-04-03.
+ * Created by Daniel Eineving on 2017-04-03.
  */
-public class MyUtils {
+public class BrainTools {
     public static List<SnakeDirection> filledMoves(MapUtil mapUtil) {
         List<SnakeDirection> filled = new LinkedList<>();
         filled.add(SnakeDirection.DOWN);

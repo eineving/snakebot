@@ -1,11 +1,9 @@
-package se.cygni.snake.brains;
+package se.cygni.snake.brain;
 
 import se.cygni.snake.api.model.SnakeDirection;
 import se.cygni.snake.client.MapCoordinate;
 import se.cygni.snake.client.MapUtil;
 
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +23,7 @@ public class Caution extends Sense {
         Map<SnakeDirection, Double> weighted = getPrioTemplate();
 
 
-        List<MapCoordinate> enemyPossibleNext = MyUtils.getPossibleEnemySnakePossitions(mapUtil, liveSnakes);
+        List<MapCoordinate> enemyPossibleNext = BrainTools.getPossibleEnemySnakePossitions(mapUtil, liveSnakes);
 
         if (enemyPossibleNext.contains(mapUtil.getMyPosition().translateBy(-1, 0))) {
             weighted.put(SnakeDirection.LEFT, reductionFactor);

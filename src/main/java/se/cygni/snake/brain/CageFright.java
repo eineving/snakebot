@@ -1,4 +1,4 @@
-package se.cygni.snake.brains;
+package se.cygni.snake.brain;
 
 import se.cygni.snake.api.model.SnakeDirection;
 import se.cygni.snake.client.MapCoordinate;
@@ -9,53 +9,53 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by danie on 2017-04-05.
+ * Created by Daniel Eineving on 2017-04-05.
  */
 public class CageFright extends Sense {
     private Double reward;
-    private Double penalty;
+    private Double penaltyFactor;
 
-    public CageFright(Double reward, Double penalty) {
+    public CageFright(Double reward, Double penaltyFactor) {
         this.reward = reward;
-        this.penalty = penalty;
+        this.penaltyFactor = penaltyFactor;
     }
 
     @Override
     public Map<SnakeDirection, Double> getMovesRanked(MapUtil mapUtil, List<String> liveSnakes) {
         Map<SnakeDirection, Double> prio = new HashMap<>();
         if (isBorder(mapUtil.getMyPosition().translateBy(0, -1))) {
-            prio.put(SnakeDirection.UP, penalty );
+            prio.put(SnakeDirection.UP, penaltyFactor);
         } else {
             prio.put(SnakeDirection.UP, reward);
         }
 
 
         if (isBorder(mapUtil.getMyPosition().translateBy(0, 1))) {
-            prio.put(SnakeDirection.DOWN, penalty );
+            prio.put(SnakeDirection.DOWN, penaltyFactor);
         } else {
             prio.put(SnakeDirection.DOWN, reward);
         }
 
 
         if (isBorder(mapUtil.getMyPosition().translateBy(1, 0))) {
-            prio.put(SnakeDirection.RIGHT, penalty );
+            prio.put(SnakeDirection.RIGHT, penaltyFactor);
         } else {
             prio.put(SnakeDirection.RIGHT, reward);
         }
 
 
         if (isBorder(mapUtil.getMyPosition().translateBy(-1, 0))) {
-            prio.put(SnakeDirection.LEFT, penalty );
+            prio.put(SnakeDirection.LEFT, penaltyFactor);
         } else {
             prio.put(SnakeDirection.LEFT, reward);
         }
         //45 33
 
-
+        System.out.println(prio.toString());
         return prio;
     }
 
     private boolean isBorder(MapCoordinate coordinate) {
-        return (coordinate.x < 1 && coordinate.x >= 45 && coordinate.y < 1 && coordinate.y >= 33);
+        return (coordinate.x < 1 || coordinate.x >= 45 || coordinate.y < 1 || coordinate.y >= 33);
     }
 }

@@ -1,4 +1,4 @@
-package se.cygni.snake.brains;
+package se.cygni.snake.brain;
 
 import se.cygni.snake.api.model.SnakeDirection;
 import se.cygni.snake.client.MapCoordinate;
@@ -7,7 +7,7 @@ import se.cygni.snake.client.MapUtil;
 import java.util.*;
 
 /**
- * Created by danie on 2017-04-03.
+ * Created by Daniel Eineving on 2017-04-03.
  */
 public class Planning extends Sense {
     private Set<MapCoordinate> tempBounding = new HashSet<>();
@@ -46,7 +46,7 @@ public class Planning extends Sense {
 
         int max = 1;
         int temp = 0;
-        for (MapCoordinate next : MyUtils.getTheFourNeighbours(proposedMove)) {
+        for (MapCoordinate next : BrainTools.getTheFourNeighbours(proposedMove)) {
             tempBounding = new HashSet<>();
             tempBounding.add(proposedMove);
             temp = wrapped(mapUtil, next);

@@ -1,4 +1,4 @@
-package se.cygni.snake.brains;
+package se.cygni.snake.brain;
 
 import se.cygni.snake.api.model.SnakeDirection;
 import se.cygni.snake.client.MapUtil;
